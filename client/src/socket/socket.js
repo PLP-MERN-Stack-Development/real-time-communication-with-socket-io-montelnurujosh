@@ -21,6 +21,8 @@ export const useSocket = () => {
   const [messages, setMessages] = useState([]);
   const [users, setUsers] = useState([]);
   const [typingUsers, setTypingUsers] = useState([]);
+  const [currentRoom, setCurrentRoom] = useState('general');
+  const [rooms, setRooms] = useState([]);
 
   // Connect to socket server
   const connect = (username) => {
@@ -48,6 +50,13 @@ export const useSocket = () => {
   // Set typing status
   const setTyping = (isTyping) => {
     socket.emit('typing', isTyping);
+  };
+
+  // Join a room
+  const joinRoom = (roomName) => {
+    socket.emit('join_room', roomName);
+    setCurrentRoom(roomName);
+    setMessages([]); // Clear messages when switching rooms
   };
 
   // Socket event listeners
@@ -103,6 +112,31 @@ export const useSocket = () => {
       ]);
     };
 
+    const onUserListUpdate = (userList) => {
+      setUsers(userList);
+    };
+
+    // Room events
+    const onRoomList = (roomList) => {
+      setRooms(roomList);
+    };
+
+    const onRoomMessages = (roomMessages) => {
+      setMessages(roomMessages);
+    };
+
+    const onUserJoinedRoom = (data) => {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now(),
+          system: true,
+          message: `${data.username} joined ${data.room}`,
+          timestamp: new Date().toISOString(),
+        },
+      ]);
+    };
+
     // Typing events
     const onTypingUsers = (users) => {
       setTypingUsers(users);
@@ -117,6 +151,10 @@ export const useSocket = () => {
     socket.on('user_joined', onUserJoined);
     socket.on('user_left', onUserLeft);
     socket.on('typing_users', onTypingUsers);
+    socket.on('room_list', onRoomList);
+    socket.on('room_messages', onRoomMessages);
+    socket.on('user_joined_room', onUserJoinedRoom);
+    socket.on('userListUpdate', onUserListUpdate);
 
     // Clean up event listeners
     return () => {
@@ -128,6 +166,10 @@ export const useSocket = () => {
       socket.off('user_joined', onUserJoined);
       socket.off('user_left', onUserLeft);
       socket.off('typing_users', onTypingUsers);
+      socket.off('room_list', onRoomList);
+      socket.off('room_messages', onRoomMessages);
+      socket.off('user_joined_room', onUserJoinedRoom);
+      socket.off('userListUpdate', onUserListUpdate);
     };
   }, []);
 
@@ -138,11 +180,14 @@ export const useSocket = () => {
     messages,
     users,
     typingUsers,
+    currentRoom,
+    rooms,
     connect,
     disconnect,
     sendMessage,
     sendPrivateMessage,
     setTyping,
+    joinRoom,
   };
 };
 
