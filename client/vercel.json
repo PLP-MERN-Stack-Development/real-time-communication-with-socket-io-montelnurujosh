@@ -16,6 +16,6 @@
     }
   ],
   "env": {
-    "VITE_SOCKET_URL": "@socket_url"
+    "VITE_SOCKET_URL": "https://real-time-communication-with-socket-io-xm8n.onrender.com"
   }
 }
